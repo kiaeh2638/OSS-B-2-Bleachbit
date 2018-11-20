@@ -22,12 +22,17 @@
 Perform (or assist with) cleaning operations.
 """
 
+#모듈을 불러온다.
 from __future__ import absolute_import, print_function
-
+"""absolute_import, print_function 모듈을 __future__로부터 불러온다."""
 from bleachbit import _, expanduser, expandvars
+""" _, expanduser, expandvars 모듈을 bleachbit로부터 불러온다."""
 from bleachbit.FileUtilities import children_in_directory
+"""children_in_directory 모듈을 bleachbit의 FileUtilities로부터 불러온다"""
 from bleachbit.Options import options
+"""options모듈을 bleachbit의 Options로부터 불러온다"""
 from bleachbit import Command, FileUtilities, Memory, Special
+"""Comman,FileUtilities,Memory,special 모듈을 bleachbit로부터 불러온다"""
 
 import glob
 import logging
@@ -35,20 +40,27 @@ import os.path
 import re
 import sys
 import warnings
+""" glob, logging, os.path, re, sys, warnings 모듈을 불러온다 """
 
 if 'posix' == os.name:
     from bleachbit import Unix
+    """ 만약 운영체제의 이름이 posix이면 bleachbit로부터 Unix모듈을 불러온다"""
 elif 'nt' == os.name:
     from bleachbit import Windows
+    """ 운영체제의 이름이 nt면 bleachbit로부터 Windows모듈을 불러온다"""
 
 # Suppress GTK warning messages while running in CLI #34
 warnings.simplefilter("ignore", Warning)
+ """ warnigs모듈의 simplefilter함수를 사용해 간단한 경고 필터 설정"""
 
-try:
+
+try:                       """예외처리"""
     import gtk
     HAVE_GTK = True
+    """ gtk 모듈을 불러오고 HAVE_GTK의 값을 True로 한다"""
 except ImportError:
     HAVE_GTK = False
+    """ 모듈을 불러올때 에러 발생시 HAVE_GTK의 값을 False로 한다"""
 
 # a module-level variable for holding cleaners
 backends = {}
