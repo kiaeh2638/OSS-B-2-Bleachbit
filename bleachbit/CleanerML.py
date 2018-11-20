@@ -215,13 +215,21 @@ class CleanerML:
 
         self.handle_cleaner_option_label(
             option.getElementsByTagName('label')[0])
-        description = option.getElementsByTagName('description')
+            #option에서 label태그를 추출해서 handle_cleaner_option_label 함수 호출
+        description = option.getElementsByTagName('description')\
+        #option에서 description태그 추출
         self.handle_cleaner_option_description(description[0])
+        #추출한 태그중 첫번째요소로 handle_cleaner_option_description함수 호출
         warning = option.getElementsByTagName('warning')
+        # option에서 warning태그 추출
         if warning:
             self.handle_cleaner_option_warning(warning[0])
+            # warning태그가 존재할경우 첫번째 요소로 handle_cleaner_option_warning함수 호출
             if self.option_warning:
                 self.cleaner.set_warning(self.option_id, self.option_warning)
+                # option_warning이 존재할 경우
+                # option_id와 option_warning으로 cleaner에서 set_warning함수 호출
+                # set_warning은 옵션을 대화형으로 선택할 때 표시할 경고를 설정하는 함수
 
         for action in option.getElementsByTagName('action'):
             self.handle_cleaner_option_action(action)
