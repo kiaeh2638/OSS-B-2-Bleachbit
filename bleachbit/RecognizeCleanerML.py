@@ -20,6 +20,7 @@
 
 """
 Check local CleanerML files as a security measure
+보안 수단으로 로컬 CleanerML 파일 확인
 """
 
 from __future__ import absolute_import, print_function
@@ -33,9 +34,9 @@ import hashlib
 import logging
 import os
 import sys
+                                                             # 사용할 모듈 불러오기
 
-
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)                         # __name__의 로거 추출
 
 KNOWN = 1
 CHANGED = 2
@@ -43,10 +44,12 @@ NEW = 3
 
 
 def cleaner_change_dialog(changes, parent):
-    """Present a dialog regarding the change of cleaner definitions"""
+    """Present a dialog regarding the change of cleaner definitions
+       클리너 정의의 변경에 관한 다이얼로그 제시"""
 
     def toggled(cell, path, model):
-        """Callback for clicking the checkbox"""
+        """Callback for clicking the checkbox
+           체크박스를 클릭하기 위한 콜백함수"""
         __iter = model.get_iter_from_string(path)
         value = not model.get_value(__iter, 0)
         model.set(__iter, 0, value)
