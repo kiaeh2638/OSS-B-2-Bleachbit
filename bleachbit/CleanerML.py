@@ -269,26 +269,29 @@ class CleanerML:
             return                                                # 값이 true가 아니면 return
         command = action_node.getAttribute('command')             # action_node에서 command속성을 추출
         provider = None                                           # provider변수 초기화
-        for actionplugin in ActionProvider.plugins:               # ActionProvider.plugins
-            if actionplugin.action_key == command:
-                provider = actionplugin(action_node, self.vars)
-        if provider is None:
+        for actionplugin in ActionProvider.plugins:               # ActionProvider.plugins 값들 반복
+            if actionplugin.action_key == command:                # 추출한 command와 액션플러그인의 액션키가 같으면
+                provider = actionplugin(action_node, self.vars)   # provider에 액션플러그인 저장
+        if provider is None:                                      # provider가 None이면 런타임에러를 발생시킴
             raise RuntimeError("Invalid command '%s'" % command)
-        self.cleaner.add_action(self.option_id, provider)
+        self.cleaner.add_action(self.option_id, provider)         # option_id에 대해 실행할 action등록
+        
+                                                           # action태그에서 command를 추출하고 액션플러그인의 액션키와 같은지 확인해서
+                                                           # 일치하면 그 액션플러그인을 provider에 저장한다. 그리고 action을 등록한다.
 
-    def handle_localizations(self, localization_nodes):
-        """<localizations> element under <cleaner>"""
-        if not 'posix' == os.name:
+    def handle_localizations(self, localization_nodes):    
+        """<localizations> element under <cleaner>"""         # cleaner 아래의 localizations 요소
+        if not 'posix' == os.name:                            # 운영체제의 이름이 posix가 아니면 return
             return
-        from bleachbit import Unix
-        for localization_node in localization_nodes:
+        from bleachbit import Unix                            # posix이면 Unix모듈을 불러온다
+        for localization_node in localization_nodes:         
             for child_node in localization_node.childNodes:
-                Unix.locales.add_xml(child_node)
+                Unix.locales.add_xml(child_node)              # 파일을 사용할 수 없는 것으로 보고되지 않도록 더미 작업을 추가한다.
         # Add a dummy action so the file isn't reported as unusable
         self.cleaner.add_action('localization', ActionProvider(None))
 
-    def handle_cleaner_var(self, var):
-        """Handle one <var> element under <cleaner>.
+    def handle_cleaner_var(self, var):                     
+        """Handle one <var> element under <cleaner>.          cleaner 아래의 var 요소
 
         Example:
 
@@ -298,52 +301,53 @@ class CleanerML:
          <value>%AppData\foo</value>
          </var>
         """
-        var_name = var.getAttribute('name')
-        for value_element in var.getElementsByTagName('value'):
-            if not self.os_match(value_element.getAttribute('os')):
-                continue
-            value_str = getText(value_element.childNodes)
-            is_glob = value_element.getAttribute('search') == 'glob'
+        var_name = var.getAttribute('name')           #var태그에서 name속성을 추출
+        for value_element in var.getElementsByTagName('value'):   # var태그의 value태그들 반복한다.
+            if not self.os_match(value_element.getAttribute('os')):  # value태그들에서 os속성값을 추출해 운영체제와 일치하는지 확인한다.
+                continue                                             # 일치하지않으면 continue
+            value_str = getText(value_element.childNodes)            # value태그들의 자식노드들을 text형식으로 추출 (경로가 저장된다)
+            is_glob = value_element.getAttribute('search') == 'glob'  # value태그의 search속성이 glob인지 확인하고 저장
             if is_glob:
-                value_list = expand_glob_join(value_str, '')
-            else:
-                value_list = [value_str, ]
+                value_list = expand_glob_join(value_str, '') # is_glob이 참이면 추출한 경로에 운영체제에 맞게 연결하고, 
+                                                             # 경로안에 환경변수가 있다면 확장하고
+            else:                                            # list를 돌려주는 함수 expand_glob_join 호출
+                value_list = [value_str, ]                   # 아닐경우 추출한 경로를 list에 저장
             if self.vars.has_key(var_name):
                 # append
-                self.vars[var_name] = value_list + self.vars[var_name]
+                self.vars[var_name] = value_list + self.vars[var_name] 
             else:
                 # initialize
-                self.vars[var_name] = value_list
+                self.vars[var_name] = value_list 
 
 
 def list_cleanerml_files(local_only=False):
     """List CleanerML files"""
-    cleanerdirs = (bleachbit.personal_cleaners_dir, )
+    cleanerdirs = (bleachbit.personal_cleaners_dir, ) 
     if bleachbit.local_cleaners_dir:
-        # If the application is installed, locale_cleaners_dir is None
-        cleanerdirs = (bleachbit.local_cleaners_dir, )
-    if not local_only and bleachbit.system_cleaners_dir:
-        cleanerdirs += (bleachbit.system_cleaners_dir, )
+        # If the application is installed, local_cleaners_dir is None 응용프로그램이 설치된 경우, local_cleaner_dir은 없다.
+        cleanerdirs = (bleachbit.local_cleaners_dir, ) # 지역 클리너 디렉토리가 있는경우 cleanerdirs에 저장
+    if not local_only and bleachbit.system_cleaners_dir:  
+        cleanerdirs += (bleachbit.system_cleaners_dir, ) # local_only가 false고 시스템 클리너 디렉토리가 없으면 cleanerdirs에 저장
     for pathname in listdir(cleanerdirs):
-        if not pathname.lower().endswith('.xml'):
-            continue
-        import stat
-        st = os.stat(pathname)
+        if not pathname.lower().endswith('.xml'): # 클리너디렉토리에 있는 파일의 전체경로를 반복하여 소문자로바꾸고 .xml로 끝나는지 확인
+            continue     # false면 continue
+        import stat      # stat모듈을 불러온다
+        st = os.stat(pathname)  # 해당 경로의 내용을 추출하여 st에 저장
         if sys.platform != 'win32' and stat.S_IMODE(st[stat.ST_MODE]) & 2:
             logger.warning("ignoring cleaner because it is world writable: %s", pathname)
             continue
-        yield pathname
+        yield pathname # 경로 반환
 
 
 def load_cleaners():
     """Scan for CleanerML and load them"""
-    for pathname in list_cleanerml_files():
-        try:
-            xmlcleaner = CleanerML(pathname)
+    for pathname in list_cleanerml_files(): # 클리너ML 파일들의 리스트요소 반복
+        try: # 예외처리-
+            xmlcleaner = CleanerML(pathname) # 클리너ML 파일들의 리스트로 CleanerML클래스 객체 생성
         except:
-            logger.exception('error reading cleaner: %s', pathname)
+            logger.exception('error reading cleaner: %s', pathname) # 오류메세지와함께 스택추적 
             continue
-        cleaner = xmlcleaner.get_cleaner()
+        cleaner = xmlcleaner.get_cleaner() 
         if cleaner.is_usable():
             Cleaner.backends[cleaner.id] = cleaner
         else:
@@ -351,8 +355,9 @@ def load_cleaners():
 
 
 def pot_fragment(msgid, pathname, translators=None):
-    """Create a string fragment for generating .pot files"""
-    msgid = msgid.replace('"', '\\"') # escape quotation mark
+    """Create a string fragment for generating .pot files
+       .pot파일을 만들기위한 문자열 조각 생성"""
+    msgid = msgid.replace('"', '\\"') # escape quotation mark 인용부호를 피함 
     if translators:
         translators = "#. %s\n" % translators
     else:
@@ -366,20 +371,21 @@ msgstr ""
 
 
 def create_pot():
-    """Create a .pot for translation using gettext"""
+    """Create a .pot for translation using gettext
+       gettext를 이용해 번역할 .pot파일 생성"""
 
-    f = open('../po/cleanerml.pot', 'w')
+    f = open('../po/cleanerml.pot', 'w') # po/cleanerml.pot을 연다.
 
-    for pathname in listdir('../cleaners'):
-        if not pathname.lower().endswith(".xml"):
+    for pathname in listdir('../cleaners'): # /cleaners경로에있는 파일들의 경로 반복
+        if not pathname.lower().endswith(".xml"): #경로를 소문자로바꾸고 .xml로 끝나는지 확인해서 false면 continue
             continue
-        strings = []
+        strings = [] 
         try:
             CleanerML(pathname,
                       lambda newstr, translators=None:
                       strings.append([newstr, translators]))
         except:
-            logger.exception('error reading: %s', pathname)
+            logger.exception('error reading: %s', pathname) # 에러발생메세지 출력
             continue
         for (string, translators) in strings:
             f.write(pot_fragment(string, pathname, translators))
