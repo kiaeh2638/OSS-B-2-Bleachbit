@@ -327,7 +327,7 @@ def list_cleanerml_files(local_only=False):
         # If the application is installed, local_cleaners_dir is None 응용프로그램이 설치된 경우, local_cleaner_dir은 없다.
         cleanerdirs = (bleachbit.local_cleaners_dir, ) # 지역 클리너 디렉토리가 있는경우 cleanerdirs에 저장
     if not local_only and bleachbit.system_cleaners_dir:  
-        cleanerdirs += (bleachbit.system_cleaners_dir, ) # local_only가 false고 시스템 클리너 디렉토리가 없으면 cleanerdirs에 저장
+        cleanerdirs += (bleachbit.system_cleaners_dir, ) # local_only가 false고 시스템 클리너 디렉토리가 으면 cleanerdirs에 저장
     for pathname in listdir(cleanerdirs):
         if not pathname.lower().endswith('.xml'): # 클리너디렉토리에 있는 파일의 전체경로를 반복하여 소문자로바꾸고 .xml로 끝나는지 확인
             continue     # false면 continue
