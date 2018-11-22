@@ -231,38 +231,45 @@ class CleanerML:
                 # option_id와 option_warning으로 cleaner에서 set_warning함수 호출
                 # set_warning은 옵션을 대화형으로 선택할 때 표시할 경고를 설정하는 함수
 
-        for action in option.getElementsByTagName('action'):
+        for action in option.getElementsByTagName('action')
             self.handle_cleaner_option_action(action)
-
+            # option에서 action태그들을 추출하여 self.handle_cleaner_action함수 호출 반복
+    
         self.cleaner.add_option(
             self.option_id, self.option_name, self.option_description)
+        #cleaner에서 add_option함수 사용 add_option함수는 option을 등록하는 함수
+        # option[option_id]에 option_name, option_description 저장하게 된다.
 
     def handle_cleaner_option_label(self, label):
-        """<label> element under <option>"""
-        self.option_name = _(getText(label.childNodes))
-        translate = label.getAttribute('translate')
-        translators = label.getAttribute('translators')
-        if not translate or boolstr_to_bool(translate):
-            self.xlate_cb(self.option_name, translators)
+        """<label> element under <option>
+           option태그 아래에서의 label요소"""
+        self.option_name = _(getText(label.childNodes)) # label의 자식노드를 text로 추출해서 option_name에 저장
+        translate = label.getAttribute('translate') # label에서 translate속성 추출
+        translators = label.getAttribute('translators') # label에서 translators속성 추출
+        if not translate or boolstr_to_bool(translate): 
+            self.xlate_cb(self.option_name, translators) # translate 나 translate를 파이썬부울로 변환한 값이 true가아니면
+                                                         # xlate_cb함수 사용
+                                                         # boolstr_to_bool는 General.py에 정의되어있는 함수로
+                                                         # 문자열 bool값을 python bool값으로 변환해주는 함수다.
 
-    def handle_cleaner_option_description(self, description):
-        """<description> element under <option>"""
-        self.option_description = _(getText(description.childNodes))
-        translators = description.getAttribute('translators')
-        self.xlate_cb(self.option_description, translators)
+    def handle_cleaner_option_description(self, description):         
+        """<description> element under <option>"""                     # cleaner태그 아래의 option태그 아래의 description 요소
+        self.option_description = _(getText(description.childNodes))   # description의 자식노드를 text형식으로 추출
+        translators = description.getAttribute('translators')          # description에서 translators 속성 추출
+        self.xlate_cb(self.option_description, translators)            # xlate_cb함수 사용
 
-    def handle_cleaner_option_warning(self, warning):
+    def handle_cleaner_option_warning(self, warning):             # clearner 아래의 option 아래의 warning 요소
         """<warning> element under <option>"""
-        self.option_warning = _(getText(warning.childNodes))
-        self.xlate_cb(self.option_warning)
+        self.option_warning = _(getText(warning.childNodes))      # warning의 자식노드를 text data로 추출
+        self.xlate_cb(self.option_warning)                        # xlate_cb함수 사용 
 
-    def handle_cleaner_option_action(self, action_node):
+    def handle_cleaner_option_action(self, action_node):          # cleaner 아래의 option 아래의 action 요소
         """<action> element under <option>"""
-        if not self.os_match(action_node.getAttribute('os')):
-            return
-        command = action_node.getAttribute('command')
-        provider = None
-        for actionplugin in ActionProvider.plugins:
+        if not self.os_match(action_node.getAttribute('os')):     # action_node에서 os속성을 추출해서 os_match함수사용
+            return                                                # 값이 true가 아니면 return
+        command = action_node.getAttribute('command')             # action_node에서 command속성을 추출
+        provider = None                                           # provider변수 초기화
+        for actionplugin in ActionProvider.plugins:               # ActionProvider.plugins
             if actionplugin.action_key == command:
                 provider = actionplugin(action_node, self.vars)
         if provider is None:
