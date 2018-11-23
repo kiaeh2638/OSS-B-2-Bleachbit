@@ -68,10 +68,10 @@ backends = {}
 
 class Cleaner:
 
-    """Base class for a cleaner"""
-
-    def __init__(self):
-        self.actions = []
+    """Base class for a cleaner"""           # cleaner의 기본 클래스
+ 
+    def __init__(self):                      # 생성자
+        self.actions = []                    # 메서드들을 초기화 및 생성
         self.id = None
         self.description = None
         self.name = None
@@ -81,74 +81,79 @@ class Cleaner:
         self.regexes_compiled = []
 
     def add_action(self, option_id, action):
-        """Register 'action' (instance of class Action) to be executed
+        """Register 'action' (instance of class Action) to be executed     # option_id에 대해 실행할 action을 등록하는함수
         for ''option_id'.  The actions must implement list_files and
-        other_cleanup()"""
-        self.actions += ((option_id, action), )
+        other_cleanup()"""  
+        self.actions += ((option_id, action), )                          # cleaner의 action 메서드에 option_id와 action 추가
 
-    def add_option(self, option_id, name, description):
-        """Register option (such as 'cache')"""
-        self.options[option_id] = (name, description)
+    def add_option(self, option_id, name, description):        
+        """Register option (such as 'cache')"""              # cache와 같은 option을 등록하는 함수
+        self.options[option_id] = (name, description)        # 키값이 option_id인 option딕셔너리의 밸류를 name,description로 저장
 
     def add_running(self, detection_type, pathname):
-        """Add a way to detect this program is currently running"""
-        self.running += ((detection_type, pathname), )
+        """Add a way to detect this program is currently running"""    # 현재 실행중인 프로그램을 검색하는 방법을 추가하는 함수
+        self.running += ((detection_type, pathname), )                # running 리스트에 detection_type, pathname 추가
 
     def auto_hide(self):
-        """Return boolean whether it is OK to automatically hide this
-        cleaner"""
-        for (option_id, __name) in self.get_options():
-            try:
-                for cmd in self.get_commands(option_id):
-                    for dummy in cmd.execute(False):
+        """Return boolean whether it is OK to automatically hide this  #클리너를 자동으로 숨길지에 대한 여부를 boolean값으로 반환하는함수
+        cleaner"""                           
+        for (option_id, __name) in self.get_options():     # options딕셔너리의 값을 반복
+            try:       #예외처리부분
+                for cmd in self.get_commands(option_id): # option_id에서 명령인스턴스 목록을 가져와서 반복 
+                    for dummy in cmd.execute(False):  
                         return False
                 for ds in self.get_deep_scan(option_id):
                     if isinstance(ds, dict):
                         return False
             except Exception:
-                logger = logging.getLogger(__name__)
+                logger = logging.getLogger(__name__) # __name__의 로거 추출
                 logger.exception('exception in auto_hide(), cleaner=%s, option=%s',
-                                 self.name, option_id)
+                                 self.name, option_id) # 이 로거의 오류 레벨 메시지를 기록,
         return True
 
     def get_commands(self, option_id):
-        """Get list of Command instances for option 'option_id'"""
-        for action in self.actions:
-            if option_id == action[0]:
-                for cmd in action[1].get_commands():
-                    yield cmd
-        if option_id not in self.options:
-            raise RuntimeError("Unknown option '%s'" % option_id)
+        """Get list of Command instances for option 'option_id'""" # 옵션option_id 에대한 명령 인스턴스 목록을 가져오는 함수.
+        for action in self.actions: # actions리스트에 있는 값 반복
+            if option_id == action[0]: # option_id의 값이 actions리스트의 있는 값의 첫번째요소 일경우
+                for cmd in action[1].get_commands(): 
+                    yield cmd                         # action[1]의 command를 추출해서 반복하고 return
+        if option_id not in self.options:             # options 딕셔너리에 option_id가 없을경우
+            raise RuntimeError("Unknown option '%s'" % option_id)  # 알수없는 option이라는 에러를 발생시킴
 
     def get_deep_scan(self, option_id):
-        """Get dictionary used to build a deep scan"""
-        for action in self.actions:
-            if option_id == action[0]:
-                for ds in action[1].get_deep_scan():
-                    yield ds
-        if option_id not in self.options:
-            raise RuntimeError("Unknown option '%s'" % option_id)
-
+        """Get dictionary used to build a deep scan"""  # 딥스캔을 빌드하기위해 사용된 딕셔너리를 가져오는 함수.
+        for action in self.actions:  # actions의 리스트값 반복
+            if option_id == action[0]: # 반복하는 값이 option_id와 일치하면 
+                for ds in action[1].get_deep_scan(): # action[1]에서 딥스캔을 빌드하기위해 사용된 딕셔너리를 반복하고 return
+                    yield ds 
+                                                # add_action 함수에 의해 actions는 (option_id, action) 으로 구성된다.
+                                                # 따라서 action[0] 는 add_action에 의해 추가된 option_id를 나타내고 action[1] = action
+        if option_id not in self.options: # opntions 딕셔너리에 option_id가 없으면 
+            raise RuntimeError("Unknown option '%s'" % option_id)   # 런타임에러 발생
+ 
     def get_description(self):
-        """Brief description of the cleaner"""
+        """Brief description of the cleaner"""  # description(클리너에대한 간략한 설명)을 반환하는 함수
         return self.description
 
     def get_id(self):
-        """Return the unique name of this cleaner"""
+        """Return the unique name of this cleaner"""  # 클리너의 고유 id를 반환하는 함수
         return self.id
 
     def get_name(self):
-        """Return the human name of this cleaner"""
+        """Return the human name of this cleaner""" # 이 클리너의 사용자 이름을 반환하는 함수
         return self.name
 
     def get_option_descriptions(self):
-        """Yield the names and descriptions of each option in a 2-tuple"""
-        if self.options:
-            for key in sorted(self.options.keys()):
-                yield (self.options[key][0], self.options[key][1])
+        """Yield the names and descriptions of each option in a 2-tuple""" # 각 옵션의 이름과 설명을 2-tuple로 yield 하는 함수
+        if self.options:                         
+            for key in sorted(self.options.keys()):             #options에 값이 있으면 options의 key를 정렬하여 반복
+                yield (self.options[key][0], self.options[key][1]) # 옵션의 이름과 설명을 튜플로 리턴
+                # add_option함수로 key = option_id ,options[key][0] = name, options[key][1] = description임을 알수있다.
+                
+                
 
     def get_options(self):
-        """Return user-configurable options in 2-tuple (id, name)"""
+        """Return user-configurable options in 2-tuple (id, name)""" 
         if self.options:
             for key in sorted(self.options.keys()):
                 yield (key, self.options[key][0])
