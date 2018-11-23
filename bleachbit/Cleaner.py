@@ -210,42 +210,45 @@ class OpenOfficeOrg(Cleaner):
 
     def __init__(self):          # 생성자 
         Cleaner.__init__(self)  
-        self.options = {}
-        self.add_option('cache', _('Cache'), _('Delete the cache'))
-        self.add_option('recent_documents', _('Most recently used'), _(
-            "Delete the list of recently used documents"))
-        self.id = 'openofficeorg'
-        self.name = 'OpenOffice.org'
-        self.description = _("Office suite")
+        self.options = {} # OpenOfficeOrg의 options 딕셔너리 생성
+        self.add_option('cache', _('Cache'), _('Delete the cache')) # option_id = cache, name = cache, description = delete the cache
+        self.add_option('recent_documents', _('Most recently used'), _(  # option_id = recent_documents, name = Most recently
+            "Delete the list of recently used documents"))               # description = delete the list of recently used documents
+        self.id = 'openofficeorg'     #  사용자의 아이디 설정
+        self.name = 'OpenOffice.org'  #  사용자의 이름 설정
+        self.description = _("Office suite")  # 클래스의 설명 설정
 
         # reference: http://katana.oooninja.com/w/editions_of_openoffice.org
-        if 'posix' == os.name:
-            self.prefixes = ["~/.ooo-2.0", "~/.openoffice.org2",
+        if 'posix' == os.name:                                             # os가 posix인지 확인
+            self.prefixes = ["~/.ooo-2.0", "~/.openoffice.org2",           # 
                              "~/.openoffice.org2.0", "~/.openoffice.org/3"]
             self.prefixes += ["~/.ooo-dev3"]
-        if 'nt' == os.name:
+        if 'nt' == os.name:                                                # os가 nt인지 확인 ( nt = 윈도우 nt)
             self.prefixes = [
                 "$APPDATA\\OpenOffice.org\\3", "$APPDATA\\OpenOffice.org2"]
 
-    def get_commands(self, option_id):
+    def get_commands(self, option_id):                                     
         # paths for which to run expand_glob_join
-        egj = []
-        if 'recent_documents' == option_id:
+        egj = []    # expand_glob_join을 사용하기 위한 경로를 저장하는 용도
+        if 'recent_documents' == option_id:       # option_id가 recent_documents(최근 문서) 이면
             egj.append(
-                "user/registry/data/org/openoffice/Office/Histories.xcu")
+                "user/registry/data/org/openoffice/Office/Histories.xcu") # egj에 경로를 추가
             egj.append(
-                "user/registry/cache/org.openoffice.Office.Histories.dat")
+                "user/registry/cache/org.openoffice.Office.Histories.dat") # egj에 경로를 추가
 
-        if 'recent_documents' == option_id and not 'cache' == option_id:
-            egj.append("user/registry/cache/org.openoffice.Office.Common.dat")
+        if 'recent_documents' == option_id and not 'cache' == option_id:   # option_id가 recent_documents 이고 cache가 아니면
+            egj.append("user/registry/cache/org.openoffice.Office.Common.dat")  # 다음 경로를 추가
 
-        for egj_ in egj:
-            for prefix in self.prefixes:
-                for path in FileUtilities.expand_glob_join(prefix, egj_):
-                    if 'nt' == os.name:
-                        path = os.path.normpath(path)
-                    if os.path.lexists(path):
-                        yield Command.Delete(path)
+        for egj_ in egj:    # egj에 들어있는 경로를 반복
+            for prefix in self.prefixes:  # prefixes에 저장된 경로를 반복
+                for path in FileUtilities.expand_glob_join(prefix, egj_): # prefix와 egj의 경로를 os형식에 맞게 연결하고
+                                                                          # prefix와 egj의 경로에 환경변수가 있으면 확장한다음
+                                                                          # 경로의 "~"을 사용자 디렉토리의 절대경로로 대체한다.
+                                                    # 대체한 경로에 대응되는 모든 파일 및 디렉터리의 리스트를 이터레이터로 반환한 것을 반복
+                    if 'nt' == os.name:                # os 이름 확인 
+                        path = os.path.normpath(path)  # path의 경로를 정규화 ( 현재 디렉터리"."나 상위 디렉터리".."같은 구분자를 최대한 삭제)
+                    if os.path.lexists(path):          # 경로의 파일이 존재하는지 확인
+                        yield Command.Delete(path)     # 존재하면 삭제
 
         if 'cache' == option_id:
             dirs = []
