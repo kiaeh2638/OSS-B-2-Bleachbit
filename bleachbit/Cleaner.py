@@ -153,59 +153,63 @@ class Cleaner:
                 
 
     def get_options(self):
-        """Return user-configurable options in 2-tuple (id, name)""" 
+        """Return user-configurable options in 2-tuple (id, name)"""  # 사용자 구성 가능옵션 반환
         if self.options:
-            for key in sorted(self.options.keys()):
-                yield (key, self.options[key][0])
+            for key in sorted(self.options.keys()):  # options가 있으면 options의 키를 정렬하여 반복
+                yield (key, self.options[key][0])    # key (option_id)와 options[key][0] (name) 을 return
 
-    def get_warning(self, option_id):
+    def get_warning(self, option_id):             # 경고를 문자열로 반환하는 함수
         """Return a warning as string."""
-        if option_id in self.warnings:
-            return self.warnings[option_id]
+        if option_id in self.warnings:       # 만약 option_id가 warnings 딕셔너리에 있으면 
+            return self.warnings[option_id]  # warnings[option_id] 반환 
         else:
-            return None
+            return None    # 없으면 아무것도 반환하지 않음
 
     def is_running(self):
-        """Return whether the program is currently running"""
-        logger = logging.getLogger(__name__)
-        for running in self.running:
-            test = running[0]
-            pathname = running[1]
-            if 'exe' == test and 'posix' == os.name:
-                if Unix.is_running(pathname):
-                    logger.debug("process '%s' is running", pathname)
+        """Return whether the program is currently running"""    # 프로그램이 현재 실행 중인지 여부를 반환하는 함수
+        logger = logging.getLogger(__name__)            # __name__에서 로거 추출
+        for running in self.running:           # running 리스트의 값들 반복      
+            test = running[0]         # running[0] = detection_type   ( add_running 함수 참고)               
+            pathname = running[1]             
+            if 'exe' == test and 'posix' == os.name:  # os이름이 posix이고 exe 타입인지 확인
+                if Unix.is_running(pathname): # Unix에서 is_running함수썼을때 True이면 
+                    logger.debug("process '%s' is running", pathname) # 프로세스가 실행중이라는 debug 메세지를 로그하고 True반환
                     return True
-            elif 'exe' == test and 'nt' == os.name:
-                if Windows.is_process_running(pathname):
-                    logger.debug("process '%s' is running", pathname)
+            elif 'exe' == test and 'nt' == os.name: # os이름이 nt 이고 exe타입인지 확인
+                if Windows.is_process_running(pathname):  # 만약 Windows에서 is_process_running 함수를 사용했을때 true이면
+                    logger.debug("process '%s' is running", pathname) # 프로세스가 실행중이라는 debug 메세지를 로그하고 true반환
                     return True
-            elif 'pathname' == test:
-                expanded = expanduser(expandvars(pathname))
-                for globbed in glob.iglob(expanded):
-                    if os.path.exists(globbed):
+            elif 'pathname' == test:                # test 
+                expanded = expanduser(expandvars(pathname)) # pathname 안에 환경변수가 있으면 확장하고 현재 사용자 디렉토리의 절대경로로 대체
+                                                            # ex) C:\\Documents and Settings\\Administrator\\pathname 
+                for globbed in glob.iglob(expanded):  # iglob() : expanded의 모든 값을 실제로 동시에 저장하지 않고
+                                                      #  glob()값과 동일한 값을 산출하는 반복기를 반환함
+                    if os.path.exists(globbed): # globbed로 저장한 경로에 특정파일이 존재하는지 확인
                         logger.debug(
                             "file '%s' exists indicating '%s' is running", globbed, self.name)
+                                # 존재하면 파일이 존재하며 실행중임을 나타내는 메세지출력
                         return True
             else:
-                raise RuntimeError(
-                    "Unknown running-detection test '%s'" % test)
+                raise RuntimeError( 
+                    "Unknown running-detection test '%s'" % test) # test가 exe , pathname도 아니면 알수없는 실행타입메세지와 함께 런타임에러발생
         return False
 
     def is_usable(self):
-        """Return whether the cleaner is usable (has actions)"""
-        return len(self.actions) > 0
+        """Return whether the cleaner is usable (has actions)""" # 클리너를 사용할 수 있는지 여부 반환
+        return len(self.actions) > 0  # actions 리스트의 길이가 0보다 크다고 return
 
-    def set_warning(self, option_id, description):
+    def set_warning(self, option_id, description): 
         """Set a warning to be displayed when option is selected interactively"""
+         # 옵션을 대화형으로 선택할 때 표시할 경고 설정
         self.warnings[option_id] = description
-
+        # option_id에 대한 경고를 description으로 설정
 
 class OpenOfficeOrg(Cleaner):
 
     """Delete OpenOffice.org cache"""
 
-    def __init__(self):
-        Cleaner.__init__(self)
+    def __init__(self):          # 생성자 
+        Cleaner.__init__(self)  
         self.options = {}
         self.add_option('cache', _('Cache'), _('Delete the cache'))
         self.add_option('recent_documents', _('Most recently used'), _(
