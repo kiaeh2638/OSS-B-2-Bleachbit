@@ -533,12 +533,12 @@ class System(Cleaner):
                 yield Command.Delete(path) # 삭제
 
         # temporary files
-        if 'posix' == os.name and 'tmp' == option_id:
-            dirnames = ['/tmp', '/var/tmp']
-            for dirname in dirnames:
-                for path in children_in_directory(dirname, True):
-                    is_open = FileUtilities.openfiles.is_open(path)
-                    ok = not is_open and os.path.isfile(path) and \
+        if 'posix' == os.name and 'tmp' == option_id: # 운영체제가 posix이고 option_id가 tmp ( 임시파일) 일때
+            dirnames = ['/tmp', '/var/tmp'] # 경로 저장
+            for dirname in dirnames: # 임시파일의 경로 반복
+                for path in children_in_directory(dirname, True): # 경로의 파일 및 하위 디렉토리 반복
+                    is_open = FileUtilities.openfiles.is_open(path)  # path의 파일이 열려있는지 여부 
+                    ok = not is_open and os.path.isfile(path) and # path의 파일이 열려있지 않고 path가 존재하면 
                         not os.path.islink(path) and \
                         FileUtilities.ego_owner(path) and \
                         not self.whitelisted(path)
