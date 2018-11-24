@@ -51,8 +51,11 @@ def cleaner_change_dialog(changes, parent):
         """Callback for clicking the checkbox
            체크박스를 클릭하기 위한 콜백함수"""
         __iter = model.get_iter_from_string(path)
+        # path_sring으로 표시되는 경로를 가리키는 gtk.TreeIter를 추출
         value = not model.get_value(__iter, 0)
+        # ??? 
         model.set(__iter, 0, value)
+        # ??? 
 
     import pygtk
     pygtk.require('2.0')
