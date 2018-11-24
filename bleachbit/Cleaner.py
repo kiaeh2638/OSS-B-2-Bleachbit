@@ -546,42 +546,42 @@ class System(Cleaner):
                         yield Command.Delete(path) # path 삭제
 
         # temporary files
-        if 'nt' == os.name and 'tmp' == option_id:
+        if 'nt' == os.name and 'tmp' == option_id:         # os가 윈도우일때 임시파일 삭제
             dirname1 = expandvars(
-                "$USERPROFILE\\Local Settings\\Temp\\")
-            dirname2 = expandvars(r'%temp%')
-            dirname3 = expandvars("%windir%\\temp\\")
+                "$USERPROFILE\\Local Settings\\Temp\\")    # $USERPROFILE\\Local Settings\\Temp\\ 경로 확장
+            dirname2 = expandvars(r'%temp%')               # '%temp% 경로 확장
+            dirname3 = expandvars("%windir%\\temp\\")      # %windir%\\temp\\ 경로 확장
             dirnames = []
-            if Windows.get_windows_version() >= 6.0:
-                # Windows Vista or later
-                dirnames.append(dirname2)
+            if Windows.get_windows_version() >= 6.0:       # 윈도우의 버전이 6.0 이상이면 비스타나 그 이후버전
+                # Windows Vista or later                      
+                dirnames.append(dirname2)                  # dirnames리스트에 확장한 %temp% 경로 추가
             else:
                 # Windows XP
-                dirnames.append(dirname1)
-            dirnames.append(dirname3)
+                dirnames.append(dirname1)        # 윈도우 xp의 경우 drinames에 확장한 $USERPROFILE\\Local Settings\\Temp\\ 경로 추가
+            dirnames.append(dirname3)            # dirnames에 확장한 %windir%\\temp\\ 경로 추가
             # whitelist the folder %TEMP%\Low but not its contents
             # https://bugs.launchpad.net/bleachbit/+bug/1421726
-            for dirname in dirnames:
-                low = os.path.join(dirname, 'low').lower()
-                for filename in children_in_directory(dirname, True):
-                    if not low == filename.lower():
-                        yield Command.Delete(filename)
+            for dirname in dirnames:  # 확장한 경로 반복 
+                low = os.path.join(dirname, 'low').lower() # 경로와 'low' 를 os에 맞게 연결하고 소문자로 바꿔서 저장
+                for filename in children_in_directory(dirname, True): # dirname의 파일과 하위 디렉토리 반복 
+                    if not low == filename.lower(): # dirname의 파일과 하위 디렉토리를 소문자로 한것이 low와 같으면 
+                        yield Command.Delete(filename) # 삭제
 
         # trash
-        if 'posix' == os.name and 'trash' == option_id:
-            dirname = expanduser("~/.Trash")
-            for filename in children_in_directory(dirname, False):
+        if 'posix' == os.name and 'trash' == option_id:     # posix에서 option_id가 trash일때 
+            dirname = expanduser("~/.Trash") # ~/.Trash에서 "~"을 사용자 디렉토리로 대체 
+            for filename in children_in_directory(dirname, False): # 사용자 디렉토리/.Trash 의 파일및 하위디렉토리 삭제
                 yield Command.Delete(filename)
             # fixme http://www.ramendik.ru/docs/trashspec.html
             # http://standards.freedesktop.org/basedir-spec/basedir-spec-0.6.html
             # ~/.local/share/Trash
             # * GNOME 2.22, Fedora 9
             # * KDE 4.1.3, Ubuntu 8.10
-            dirname = expanduser("~/.local/share/Trash/files")
-            for filename in children_in_directory(dirname, True):
+            dirname = expanduser("~/.local/share/Trash/files") # 경로 확장
+            for filename in children_in_directory(dirname, True): # 경로의 파일 및 하위 디렉토리 삭제
                 yield Command.Delete(filename)
-            dirname = expanduser("~/.local/share/Trash/info")
-            for filename in children_in_directory(dirname, True):
+            dirname = expanduser("~/.local/share/Trash/info") # 경로 확장
+            for filename in children_in_directory(dirname, True): # 경로의 파일 및 하위 디렉토리 삭제
                 yield Command.Delete(filename)
             dirname = expanduser("~/.local/share/Trash/expunged")
             # desrt@irc.gimpnet.org tells me that the trash
@@ -591,51 +591,55 @@ class System(Cleaner):
                 yield Command.Delete(filename)
 
         # clipboard
-        if HAVE_GTK and 'clipboard' == option_id:
-            def clear_clipboard():
+        if HAVE_GTK and 'clipboard' == option_id:   # GTK모듈을 불러오고 option_id가 클립보드이면 
+            def clear_clipboard():   # 클립보드를 지우는 함수 생성 
                 gtk.gdk.threads_enter()
                 clipboard = gtk.clipboard_get()
                 clipboard.set_text("")
                 gtk.gdk.threads_leave()
                 return 0
-            yield Command.Function(None, clear_clipboard, _('Clipboard'))
+            yield Command.Function(None, clear_clipboard, _('Clipboard')) # 클립보드를 지우는 간단한 파이썬 함수 생성 명령 리턴
 
-        # overwrite free space
-        shred_drives = options.get_list('shred_drives')
-        if 'free_disk_space' == option_id and shred_drives:
-            for pathname in shred_drives:
+        # overwrite free space 사용가능한 공간 덮어쓰기 
+        shred_drives = options.get_list('shred_drives') # shred_drives 리스트 추출
+        if 'free_disk_space' == option_id and shred_drives:  # option_id가 free_disk_space이고 shred_drives가 존재하면
+            for pathname in shred_drives:  # shred_drives의 요소를 반복
                 # TRANSLATORS: 'Free' means 'unallocated.'
                 # %s expands to a path such as C:\ or /tmp/
-                display = _("Overwrite free disk space %s") % pathname
+                display = _("Overwrite free disk space %s") % pathname # 사용가능한 공간을 덮어쓴다고 출력
 
-                def wipe_path_func():
-                    for ret in FileUtilities.wipe_path(pathname, idle=True):
-                        # Yield control to GTK idle because this process
+                def wipe_path_func(): # 경로의 여유공간 를 지우는 함수 
+                    for ret in FileUtilities.wipe_path(pathname, idle=True): 
+                        # Yield control to GTK idle because this process  
                         # is very slow.  Also display progress.
-                        yield ret
+                        # FileUtilities.wipe_path = 경로의 여유 공간 지우는 함수
+                        # 이 기능은 반복기를 사용하여 GUI를 업데이트합니다.
+                        yield ret  #  pathname 의 여유 공간을 지우고 return 
                     yield 0
-                yield Command.Function(None, wipe_path_func, display)
+                yield Command.Function(None, wipe_path_func, display) # 간단한 파이썬 함수 생성
 
         # MUICache
         if 'nt' == os.name and 'muicache' == option_id:
             keys = (
                 'HKCU\\Software\\Microsoft\\Windows\\ShellNoRoam\\MUICache',
                 'HKCU\\Software\\Classes\\Local Settings\\Software\\Microsoft\\Windows\\Shell\\MuiCache')
-            for key in keys:
+            for key in keys: 
                 yield Command.Winreg(key, None)
+                # keys에 있는 경로들의 윈도우 레지스트리를 지운다.
 
         # prefetch
         if 'nt' == os.name and 'prefetch' == option_id:
             for path in glob.iglob(expandvars('$windir\\Prefetch\\*.pf')):
                 yield Command.Delete(path)
+                # '$windir\\Prefetch\\*.pf' 를 환경변수가 있으면 확장하고 경로에 있는 모든 파일 및 디렉토리를 삭제
 
         # recycle bin
         if 'nt' == os.name and 'recycle_bin' == option_id:
             # This method allows shredding
             recycled_any = False
-            for path in Windows.get_recycle_bin():
-                recycled_any = True
-                yield Command.Delete(path)
+            for path in Windows.get_recycle_bin(): # get_recycle_bin() : 휴지통에 있는 파일 목록들 가져오는 함수
+                recycled_any = True # 휴지통이 비어있는지에 대한 여부
+                yield Command.Delete(path) # 휴지통에 있는 파일 목록들을 가져와서 삭제
             # If there were any files deleted, Windows XP will show the
             # wrong icon for the recycle bin indicating it is not empty.
             # The icon will be incorrect until logging in to Windows again
@@ -646,27 +650,31 @@ class System(Cleaner):
             # opens the recycle bin folder.
 
             # This is a hack to refresh the icon.
-            def empty_recycle_bin_func():
+            def empty_recycle_bin_func(): # 휴지통 비우기 함수 정의
                 import tempfile
-                tmpdir = tempfile.mkdtemp()
-                Windows.move_to_recycle_bin(tmpdir)
-                try:
-                    Windows.empty_recycle_bin(None, True)
+                tmpdir = tempfile.mkdtemp() # 중복되지않게 무작위로 임시파일 생성 
+                Windows.move_to_recycle_bin(tmpdir) # 생성한 임시파일을 휴지통으로 보냄 
+                try: # 예외처리부분 
+                    Windows.empty_recycle_bin(None, True) # 휴지통 비우기 함수 호출 
                 except:
                     logging.getLogger(__name__).info('error in empty_recycle_bin()', exc_info=True)
+                    # 에러발생시 휴지통 비우기 에러 라는 로그메시지 저장
                 yield 0
             # Using the Function Command prevents emptying the recycle bin
             # when in preview mode.
-            if recycled_any:
+            if recycled_any: # 휴지통안에 파일이 있으면 
                 yield Command.Function(None, empty_recycle_bin_func, _('Empty the recycle bin'))
+                # 휴지통을 비우는 간단한 파이썬 함수 생성
+                # name = empty_recycle_bin_func , description = 'Empty the recycle bin' 
 
         # Windows Updates
-        if 'nt' == os.name and 'updates' == option_id:
-            for wu in Windows.delete_updates():
+        if 'nt' == os.name and 'updates' == option_id: 
+            for wu in Windows.delete_updates():    # 윈도우 업데이트 삭제
                 yield wu
 
     def init_whitelist(self):
-        """Initialize the whitelist only once for performance"""
+        """Initialize the whitelist only once for performance
+           성능을 위해 한 번만 화이트리스트 초기화 """
         regexes = [
             '^/tmp/.X0-lock$',
             '^/tmp/.truecrypt_aux_mnt.*/(control|volume)$',
@@ -681,103 +689,109 @@ class System(Cleaner):
             '^/tmp/orbit-[^/]+/bonobo-activation-server-[a-z0-9-]*ior$',
             '^/tmp/pulse-[^/]+/pid$',
             '^/var/tmp/kdecache-',
-            '^' + expanduser('~/.cache/wallpaper/'),
+            '^' + expanduser('~/.cache/wallpaper/'), # ~을 사용자 디렉토리로 대체하여 ^에 추가 
             # Clean Firefox cache from Firefox cleaner (LP#1295826)
-            '^' + expanduser('~/.cache/mozilla'),
+            '^' + expanduser('~/.cache/mozilla'), # ~을 사용자 디렉토리로 대체하여 ^에 추가 
             # Clean Google Chrome cache from Google Chrome cleaner (LP#656104)
-            '^' + expanduser('~/.cache/google-chrome'),
-            '^' + expanduser('~/.cache/gnome-control-center/'),
+            '^' + expanduser('~/.cache/google-chrome'), # ~을 사용자 디렉토리로 대체하여 ^에 추가  
+            '^' + expanduser('~/.cache/gnome-control-center/'), # ~을 사용자 디렉토리로 대체하여 ^에 추가  
             # iBus Pinyin
             # https://bugs.launchpad.net/bleachbit/+bug/1538919
-            '^' + expanduser('~/.cache/ibus/'),
+            '^' + expanduser('~/.cache/ibus/'), # ~을 사용자 디렉토리로 대체하여 ^에 추가  
             # Linux Bluetooth daemon obexd
-            '^' + expanduser('~/.cache/obexd/')]
+            '^' + expanduser('~/.cache/obexd/')] # ~을 사용자 디렉토리로 대체하여 ^에 추가  
         for regex in regexes:
-            self.regexes_compiled.append(re.compile(regex))
+            self.regexes_compiled.append(re.compile(regex)) # regexes_compiled 리스트에 컴파일한 regexes요소들을 추가
 
-    def whitelisted(self, pathname):
+    def whitelisted(self, pathname): #
         """Return boolean whether file is whitelisted"""
-        if not self.regexes_compiled:
-            self.init_whitelist()
-        for regex in self.regexes_compiled:
-            if regex.match(pathname) is not None:
-                return True
+           # 화이트리스트 파일인지 여부 리턴 
+        if not self.regexes_compiled:    # regexes_compiled가 존재하지않으면 
+            self.init_whitelist()        # 화이트리스트 초기화
+        for regex in self.regexes_compiled: 
+            if regex.match(pathname) is not None: # 컴파일된 regexes가 pathname과 일치하지 않으면 true값 반환
+                return True 
         return False
 
 
 def register_cleaners():
-    """Register all known cleaners: system, CleanerML, and Winapp2"""
+    """Register all known cleaners: system, CleanerML, and Winapp2""" # 클리너 등록 
     global backends
 
-    # wipe out any registrations
-    # Because this is a global variable, cannot use backends = {}
-    backends.clear()
-
+    # wipe out any registrations    backends에 등록한것을 지운다 
+    # Because this is a global variable, cannot use backends = {}  왜냐하면 전역변수 backends이므로 backends 딕셔너리를 사용할수없다.
+    backends.clear() # 초기화 
+    
     # initialize "hard coded" (non-CleanerML) backends
-    backends["openofficeorg"] = OpenOfficeOrg()
-    backends["system"] = System()
+    backends["openofficeorg"] = OpenOfficeOrg() # backends 초기화
+    backends["system"] = System() # 초기화 
 
     # register CleanerML cleaners
     from bleachbit import CleanerML
-    CleanerML.load_cleaners()
+    CleanerML.load_cleaners() # CleanerML에서 클리너를 불러온다.
 
     # register Winapp2.ini cleaners
     if 'nt' == os.name:
         from bleachbit import Winapp
-        Winapp.load_cleaners()
+        Winapp.load_cleaners() # 윈도우 운영체제일 경우 Winaap에서 클리너를 불러온다
 
 
 def create_simple_cleaner(paths):
-    """Shred arbitrary files (used in CLI and GUI)"""
-    cleaner = Cleaner()
-    cleaner.add_option(option_id='files', name='', description='')
-    cleaner.name = _("System")  # shows up in progress bar
+    """Shred arbitrary files (used in CLI and GUI)
+       잘라낸 임의 파일(CLI 및 GUI에서 사용) """
+    cleaner = Cleaner() # cleaner 객체 생성 
+    cleaner.add_option(option_id='files', name='', description='') # files라는 옵션 추가
+    cleaner.name = _("System")  # shows up in progress bar # 클리너의 이름을 system으로 설정
 
     from bleachbit import Action
 
-    class CustomFileAction(Action.ActionProvider):
+    class CustomFileAction(Action.ActionProvider):    # 사용자정의파일Action 클래스 
         action_key = '__customfileaction'
 
-        def get_commands(self):
-            for path in paths:
-                if not isinstance(path, (str, unicode)):
-                    raise RuntimeError(
+        def get_commands(self):     
+            for path in paths:     # create_simple_cleaner함수를 호출할 때 쓴 경로의 파일 반복 
+                if not isinstance(path, (str, unicode)): # path가 이 클래스의 할당 및 호환이 가능하지 않으면 
+                    raise RuntimeError( # 런타임 에러 발생 
                         'expected path as string but got %s' % str(path))
-                if not os.path.isabs(path):
-                    path = os.path.abspath(path)
-                if os.path.isdir(path):
-                    for child in children_in_directory(path, True):
-                        yield Command.Shred(child)
-                    yield Command.Shred(path)
+                if not os.path.isabs(path): # 만약 path가 절대경로가 아니면 
+                    path = os.path.abspath(path) # path를 절대경로로 바꾼다.
+                if os.path.isdir(path): # 만약 path가 디렉토리이면 
+                    for child in children_in_directory(path, True): 
+                        yield Command.Shred(child) # path의 파일 및 하위 디렉토리를 잘라낸다.
+                    yield Command.Shred(path) # path를 잘라낸다      -> 디렉토리와 디렉토리의 내용까지 다 잘라내는 코드
                 else:
-                    yield Command.Shred(path)
+                    yield Command.Shred(path) # path가 디렉토리가 아니면 path를 잘라냄   -> 파일일 경우 파일만 잘라내는 코드
     provider = CustomFileAction(None)
-    cleaner.add_action('files', provider)
+    cleaner.add_action('files', provider) # files에 액션 추가
     return cleaner
 
 
-def create_wipe_cleaner(path):
-    """Wipe free disk space of arbitrary paths (used in GUI)"""
-    cleaner = Cleaner()
+def create_wipe_cleaner(path): #
+    """Wipe free disk space of arbitrary paths (used in GUI)
+       임의 경로에 할당되지 않은 디스크 공간 지우기"""
+    cleaner = Cleaner() # 클리너 객체 생성 
     cleaner.add_option(
-        option_id='free_disk_space', name='', description='')
-    cleaner.name = ''
-
+        option_id='free_disk_space', name='', description='') # 할당되지 않은 디스크 공간이라는 이름으로 옵션추가
+    cleaner.name = '' # 클리너 이름 설정
+    # > 임시 클리너 객체 생성 
     # create a temporary cleaner object
-    display = _("Overwrite free disk space %s") % path
-
-    def wipe_path_func():
-        for ret in FileUtilities.wipe_path(path, idle=True):
+    display = _("Overwrite free disk space %s") % path 
+    # 할당되지 않은 공간을 덮어쓴다는 메시지 
+    
+    def wipe_path_func():  # 경로를 지우는 함수 
+        for ret in FileUtilities.wipe_path(path, idle=True): # 경로를 지우는 메서드를 사용후 return
             yield ret
         yield 0
 
     from bleachbit import Action
 
-    class CustomWipeAction(Action.ActionProvider):
+    class CustomWipeAction(Action.ActionProvider): 
         action_key = '__customwipeaction'
 
-        def get_commands(self):
+        def get_commands(self):  
             yield Command.Function(None, wipe_path_func, display)
-    provider = CustomWipeAction(None)
-    cleaner.add_action('free_disk_space', provider)
+                  # 경로를 지우는 간단한 파이썬 함수 생성
+    provider = CustomWipeAction(None) # Customwipeaction 객체 생성 
+    cleaner.add_action('free_disk_space', provider) # 클리너에 할당되지 않은 디스크 공간(option_id)을 사용자정의로 지우는 액션 추가
+                                                                                                   
     return cleaner
