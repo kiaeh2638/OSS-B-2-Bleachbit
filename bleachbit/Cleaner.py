@@ -250,24 +250,25 @@ class OpenOfficeOrg(Cleaner):
                     if os.path.lexists(path):          # 경로의 파일이 존재하는지 확인
                         yield Command.Delete(path)     # 존재하면 삭제
 
-        if 'cache' == option_id:
-            dirs = []
-            for prefix in self.prefixes:
-                dirs += FileUtilities.expand_glob_join(
-                    prefix, "user/registry/cache/")
-            for dirname in dirs:
-                if 'nt' == os.name:
-                    dirname = os.path.normpath(dirname)
-                for filename in children_in_directory(dirname, False):
-                    yield Command.Delete(filename)
+        if 'cache' == option_id:     # option_id가 캐시일때
+            dirs = []           
+            for prefix in self.prefixes:      # prefixes에 저장된 경로 반복
+                dirs += FileUtilities.expand_glob_join( # prefixies에 저장된 경로와 user/registry/cache/ 를 os형식에 맞게 연결하고  
+                    prefix, "user/registry/cache/")     # 확장한다음 dirs에 추가
+            for dirname in dirs:                        # dir에 저장된 경로 반복
+                if 'nt' == os.name:                     # os가 윈도우NT면
+                    dirname = os.path.normpath(dirname) # 경로를 정규화해서 dirname에 저장
+                for filename in children_in_directory(dirname, False): 
+                    yield Command.Delete(filename) # filename을 삭제
 
-        if 'recent_documents' == option_id:
-            for prefix in self.prefixes:
+        if 'recent_documents' == option_id:  # option_id가 최근 문서일 경우
+            for prefix in self.prefixes:     
                 for path in FileUtilities.expand_glob_join(prefix, "user/registry/data/org/openoffice/Office/Common.xcu"):
-                    if os.path.lexists(path):
+                    # prefixies에 저장된 경로와 user/registry/data/org/openoffice/Office/Common.xcu를 연결하고 확장한다음 반복
+                    if os.path.lexists(path): # path가 존재하는지 확인
                         yield Command.Function(path,
-                                               Special.delete_ooo_history,
-                                               _('Delete the usage history'))
+                                               Special.delete_ooo_history, 
+                                               _('Delete the usage history')) 
                 # ~/.openoffice.org/3/user/registrymodifications.xcu
                 #       Apache OpenOffice.org 3.4.1 from openoffice.org on Ubuntu 13.04
                 # %AppData%\OpenOffice.org\3\user\registrymodifications.xcu
@@ -281,7 +282,8 @@ class OpenOfficeOrg(Cleaner):
 
 class System(Cleaner):
 
-    """Clean the system in general"""
+    """Clean the system in general
+       일반적인 시스템 청소"""
 
     def __init__(self):
         Cleaner.__init__(self)
@@ -289,7 +291,7 @@ class System(Cleaner):
         #
         # options for Linux and BSD
         #
-        if 'posix' == os.name:
+        if 'posix' == os.name:                                                          #운영체제가 posix면
             # TRANSLATORS: desktop entries are .desktop files in Linux that
             # make up the application menu (the menu that shows BleachBit,
             # Firefox, and others.  The .desktop files also associate file
@@ -298,23 +300,32 @@ class System(Cleaner):
             # More information:
             # http://standards.freedesktop.org/menu-spec/latest/index.html#introduction
             self.add_option('desktop_entry', _('Broken desktop files'), _(
-                'Delete broken application menu entries and file associations'))
+                 # option_id=desktop entry , name =  손상된 데스크탑 파일들
+                'Delete broken application menu entries and file associations')) 
+                 # description = 손상된 응용 프로그램 메뉴 항목 및 파일 연결 삭제 으로 option 추가
             self.add_option('cache', _('Cache'), _('Delete the cache'))
+            # 캐시 삭제를 위한 옵션 추가
             # TRANSLATORS: Localizations are files supporting specific
             # languages, so applications appear in Spanish, etc.
             self.add_option('localizations', _('Localizations'), _(
                 'Delete files for unwanted languages'))
+            # 원치 않는 언어를 삭제하는 옵션 추가
             self.set_warning(
-                'localizations', _("Configure this option in the preferences."))
+                'localizations', _("Configure this option in the preferences."))\
+            # localizations에 대해 기본 설정에서 이 옵션 구성하라는 경고메세지 설정\
+            
             # TRANSLATORS: 'Rotated logs' refers to old system log files.
             # Linux systems often have a scheduled job to rotate the logs
             # which means compress all except the newest log and then delete
             # the oldest log.  You could translate this 'old logs.'
             self.add_option(
                 'rotated_logs', _('Rotated logs'), _('Delete old system logs'))
+            # 시스템 로그를 삭제기 위한 옵션 추가
             self.add_option('recent_documents', _('Recent documents list'), _(
                 'Delete the list of recently used documents'))
+            # 최근 사용된 문서들의 목록을 삭제하기위한 옵션 추가
             self.add_option('trash', _('Trash'), _('Empty the trash'))
+            # 쓰레기통을 비우기 위한 옵션 추가
 
         #
         # options just for Linux
