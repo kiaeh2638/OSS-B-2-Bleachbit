@@ -422,24 +422,26 @@ class System(Cleaner):
                      '~/.kde/share/mimelnk/application/ram.desktop',
                      '~/.kde2/share/mimelnk/application/',
                      '~/.kde2/share/applnk']
+        # 메뉴 디렉토리에 다음 경로들을 설정
 
-        if 'posix' == os.name and 'desktop_entry' == option_id:
-            for dirname in menu_dirs:
-                for filename in [fn for fn in children_in_directory(dirname, False)
-                                 if fn.endswith('.desktop')]:
-                    if Unix.is_broken_xdg_desktop(filename):
-                        yield Command.Delete(filename)
+        if 'posix' == os.name and 'desktop_entry' == option_id:          #  운영체제가 posix이고 option_id가 desktop_entry인 경우
+            for dirname in menu_dirs: # 메뉴 디렉토리에 있는 경로를 반복 
+                for filename in [fn for fn in children_in_directory(dirname, False)  
+                                 if fn.endswith('.desktop')]: 
+                    if Unix.is_broken_xdg_desktop(filename): # filename의 XDG 데스크톱 항목 파일의 손상 여부 확인 
+                        yield Command.Delete(filename) # filename 삭제 
 
         # unwanted locales
-        if 'posix' == os.name and 'localizations' == option_id:
+        if 'posix' == os.name and 'localizations' == option_id: # 운영체제가 posix고 option_id가 localizations일때 
             for path in Unix.locales.localization_paths(locales_to_keep=options.get_languages()):
-                if os.path.isdir(path):
-                    for f in FileUtilities.children_in_directory(path, True):
-                        yield Command.Delete(f)
-                yield Command.Delete(path)
+                # 이전에 추가한 xml 구성과 일치하는 모든 위치 지정 항목을 반복
+                if os.path.isdir(path): # path가 존재하는지 확인 
+                    for f in FileUtilities.children_in_directory(path, True): # path의 파일 및 하위 디렉토리 반복
+                        yield Command.Delete(f) # path의 파일 및 하위 디렉토리 삭제
+                yield Command.Delete(path) # path삭제
 
         # Windows logs
-        if 'nt' == os.name and 'logs' == option_id:
+        if 'nt' == os.name and 'logs' == option_id:   # os가 윈도우고 option_id가 로그일때 
             paths = (
                 '$ALLUSERSPROFILE\\Application Data\\Microsoft\\Dr Watson\\*.log',
                 '$ALLUSERSPROFILE\\Application Data\\Microsoft\\Dr Watson\\user.dmp',
@@ -477,31 +479,31 @@ class System(Cleaner):
                 '$windir\\system32\\LogFiles\\WMI\\RTBackup\EtwRT.*etl',
                 '$windir\\system32\\wbem\\Logs\\*.lo_',
                 '$windir\\system32\\wbem\\Logs\\*.log', )
-
-            for path in paths:
-                expanded = expandvars(path)
-                for globbed in glob.iglob(expanded):
-                    yield Command.Delete(globbed)
+               
+            for path in paths: # paths에 있는 경로 반복
+                expanded = expandvars(path) # 경로에 환경변수가 포함되어있으면 확장
+                for globbed in glob.iglob(expanded): # 확장한 경로의 파일및 디렉토리를 반복
+                    yield Command.Delete(globbed) # 삭제
 
         # memory
-        if sys.platform.startswith('linux') and 'memory' == option_id:
-            yield Command.Function(None, Memory.wipe_memory, _('Memory'))
+        if sys.platform.startswith('linux') and 'memory' == option_id: # 시스템의 플랫폼이 lunux로 시작하고 option_id가 메모리이면
+            yield Command.Function(None, Memory.wipe_memory, _('Memory')) # 메모리를 지우는 간단한 파이썬 함수를 만듬
 
         # memory dump
         # how to manually create this file
         # http://www.pctools.com/guides/registry/detail/856/
-        if 'nt' == os.name and 'memory_dump' == option_id:
-            fname = expandvars('$windir\\memory.dmp')
-            if os.path.exists(fname):
-                yield Command.Delete(fname)
-            for fname in glob.iglob(expandvars('$windir\\Minidump\\*.dmp')):
-                yield Command.Delete(fname)
+        if 'nt' == os.name and 'memory_dump' == option_id: # os가 윈도우고 option_id가 memory_dump 일때
+            fname = expandvars('$windir\\memory.dmp') # $windir\\memory.dmp에 환경변수가 있으면 확장
+            if os.path.exists(fname): # 확장한 경로가 존재하는지 확인
+                yield Command.Delete(fname) # 존재하면 삭제
+            for fname in glob.iglob(expandvars('$windir\\Minidump\\*.dmp')): # $windir\\Minidump\\*.dmp 를 확장하고 파일 및 디렉토리 반복
+                yield Command.Delete(fname) # $windir\\Minidump\\*.dmp'의 파일 및 디렉토리들을 삭제
 
         # most recently used documents list
-        if 'posix' == os.name and 'recent_documents' == option_id:
-            ru_fn = expanduser("~/.recently-used")
-            if os.path.lexists(ru_fn):
-                yield Command.Delete(ru_fn)
+        if 'posix' == os.name and 'recent_documents' == option_id: # os가 posix고 option_id가 최근 문서일 경우
+            ru_fn = expanduser("~/.recently-used") # ~/.recently-used 에서 "~"을 사용자 디렉토리의 경로로 대체
+            if os.path.lexists(ru_fn): # 사용자 디렉토리/.recently-used 가 존재하는지 확인
+                yield Command.Delete(ru_fn) # 존재하면 삭제
             # GNOME 2.26 (as seen on Ubuntu 9.04) will retain the list
             # in memory if it is simply deleted, so it must be shredded
             # (or at least truncated).
@@ -512,22 +514,23 @@ class System(Cleaner):
             #
             # https://bugzilla.gnome.org/show_bug.cgi?id=591404
 
-            def gtk_purge_items():
-                """Purge GTK items"""
+            def gtk_purge_items(): 
+                """Purge GTK items"""                      # GTK 항목 제거
                 gtk.RecentManager().purge_items()
                 yield 0
 
             for pathname in ["~/.recently-used.xbel", "~/.local/share/recently-used.xbel"]:
-                pathname = expanduser(pathname)
-                if os.path.lexists(pathname):
-                    yield Command.Shred(pathname)
+                pathname = expanduser(pathname) # 경로에서 "~"을 사용자 디렉토리로 대체
+                if os.path.lexists(pathname): # 경로의 파일이 존재하는지 확인
+                    yield Command.Shred(pathname) # 있으면 pathname 잘라내기
             if HAVE_GTK:
                 # Use the Function to skip when in preview mode
                 yield Command.Function(None, gtk_purge_items, _('Recent documents list'))
+                      # GTK 모듈을 불러오는데 성공했으면 최근 문서 목록을 나타내는 간단한 함수 생성
 
-        if 'posix' == os.name and 'rotated_logs' == option_id:
-            for path in Unix.rotated_logs():
-                yield Command.Delete(path)
+        if 'posix' == os.name and 'rotated_logs' == option_id: # 운영체제가 posix고 option_id 가 순환로그일때 
+            for path in Unix.rotated_logs():  #  /var/log/에서 순환 로그(예: 이전 로그) 목록을 반복 
+                yield Command.Delete(path) # 삭제
 
         # temporary files
         if 'posix' == os.name and 'tmp' == option_id:
