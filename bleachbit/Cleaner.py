@@ -330,37 +330,40 @@ class System(Cleaner):
         #
         # options just for Linux
         #
-        if sys.platform.startswith('linux'):
-            self.add_option('memory', _('Memory'),
+        if sys.platform.startswith('linux'):          # 운영체제이름이 linux로 시작할 경우
+            self.add_option('memory', _('Memory'),    # 
                             # TRANSLATORS: 'free' means 'unallocated'
-                            _('Wipe the swap and free memory'))
+                            _('Wipe the swap and free memory')) # 스왑 및 할당되지 않은 메모리를 지우는 옵션 추가
             self.set_warning(
                 'memory', _('This option is experimental and may cause system problems.'))
+                 # meomory에 관해 이 옵션은 실험적이며 시스템 문제를 일으킬 수 있다는 경고 메시지 설정
 
         #
         # options just for Microsoft Windows
         #
-        if 'nt' == os.name:
-            self.add_option('logs', _('Logs'), _('Delete the logs'))
+        if 'nt' == os.name:                                               # os가 윈도우일 경우 
+            self.add_option('logs', _('Logs'), _('Delete the logs'))   # 로그를 삭제하는 옵션 추가
             self.add_option(
-                'memory_dump', _('Memory dump'), _('Delete the file memory.dmp'))
-            self.add_option('muicache', 'MUICache', _('Delete the cache'))
+                'memory_dump', _('Memory dump'), _('Delete the file memory.dmp')) # 파일 메모리를 삭제하는 옵션 추가
+            self.add_option('muicache', 'MUICache', _('Delete the cache')) # muicache를 삭제하는 옵션 추가
             # TRANSLATORS: Prefetch is Microsoft Windows jargon.
-            self.add_option('prefetch', _('Prefetch'), _('Delete the cache'))
+            self.add_option('prefetch', _('Prefetch'), _('Delete the cache'))  # prefetch 캐시를 삭제하는 옵션 추가
+                                                                               # prefetch = 사용했던 프로그램 정보를 담아두는 곳
             self.add_option(
-                'recycle_bin', _('Recycle bin'), _('Empty the recycle bin'))
+                'recycle_bin', _('Recycle bin'), _('Empty the recycle bin'))  # 휴지통을 비우는 옵션 추가
             # TRANSLATORS: 'Update' is a noun, and 'Update uninstallers' is an option to delete
             # the uninstallers for software updates.
             self.add_option('updates', _('Update uninstallers'), _(
                 'Delete uninstallers for Microsoft updates including hotfixes, service packs, and Internet Explorer updates'))
-
+                # 핫픽스, 서비스 팩 및 Internet Explorer 업데이트를 비롯한 Microsoft 업데이트용 제거 장치를 삭제하는 옵션 추가
         #
-        # options for GTK+
+        # options for GTK+      GTK = 김프 툴킷
         #
 
-        if HAVE_GTK:
+        if HAVE_GTK:        # HAVE_GTK 는 GTK모듈을 불러올때 True로 설정했음 즉 모듈을 불러올때 오류가 나지 않았다면 다음 함수들 실행
             self.add_option('clipboard', _('Clipboard'), _(
                 'The desktop environment\'s clipboard used for copy and paste operations'))
+                # 데스크탑 환경에서 복사 및 붙여넣기에 사용되는 클립보드를 옵션에 추가
 
         #
         # options common to all platforms
@@ -368,38 +371,44 @@ class System(Cleaner):
         # TRANSLATORS: "Custom" is an option allowing the user to specify which
         # files and folders will be erased.
         self.add_option('custom', _('Custom'), _(
-            'Delete user-specified files and folders'))
+            'Delete user-specified files and folders')) # 사용자 지정 파일 및 폴더를 삭제하는 옵션 추가 
         # TRANSLATORS: 'free' means 'unallocated'
-        self.add_option('free_disk_space', _('Free disk space'),
+        self.add_option('free_disk_space', _('Free disk space'),   #
                         # TRANSLATORS: 'free' means 'unallocated'
                         _('Overwrite free disk space to hide deleted files'))
+                         # 삭제된 파일을 숨기기 위해 할당되지 않은 디스크 공간 덮어쓰기 옵션 추가
         self.set_warning('free_disk_space', _('This option is very slow.'))
+                         # free_disk_space 옵션에 대해 이 옵션은 매우 느리다는 경고 메시지 설정
         self.add_option(
             'tmp', _('Temporary files'), _('Delete the temporary files'))
+             # 임시파일을 삭제하는 옵션 추가
 
-        self.description = _("The system in general")
-        self.id = 'system'
-        self.name = _("System")
+        self.description = _("The system in general") # 시스템 클래스의 설명 설정
+        self.id = 'system'   # 시스템 클래스의 id 설정
+        self.name = _("System")  # 시스템 클래스의 이름 설정
 
     def get_commands(self, option_id):
         # cache
-        if 'posix' == os.name and 'cache' == option_id:
-            dirname = expanduser("~/.cache/")
-            for filename in children_in_directory(dirname, True):
-                if not self.whitelisted(filename):
-                    yield Command.Delete(filename)
+        if 'posix' == os.name and 'cache' == option_id:  # 운영체제이름이 posix이고 option_id가 캐시인 경우 
+            dirname = expanduser("~/.cache/") # ~/.cache/에서 "~"을 사용자 디렉토리의 절대경로로 대체한 것을 dirname에 저장
+                                              # dirname = C:\\Documents and Settings\\Administrator\\.cache\ 가 된다.
+                
+            for filename in children_in_directory(dirname, True): 
+                # C:\\Documents and Settings\\Administrator\\.cache\ 의 파일 및 선택적으로 하위 디렉토리를 반복
+                if not self.whitelisted(filename): # filename이 whitelist인지 확인해서 true일 경우
+                    yield Command.Delete(filename) # filename을 삭제하는 메서드를 return
 
         # custom
-        if 'custom' == option_id:
-            for (c_type, c_path) in options.get_custom_paths():
-                if 'file' == c_type:
-                    yield Command.Delete(c_path)
+        if 'custom' == option_id:             # option_id가 custom인지 확인 custom = 사용자 정의 
+            for (c_type, c_path) in options.get_custom_paths(): # 사용자 정의 경로의 파일 및 폴더를 반복 
+                if 'file' == c_type: 
+                    yield Command.Delete(c_path) # file타입일 경우 삭제
                 elif 'folder' == c_type:
-                    yield Command.Delete(c_path)
-                    for path in children_in_directory(c_path, True):
-                        yield Command.Delete(path)
+                    yield Command.Delete(c_path) # folder타입일 경우 삭제
+                    for path in children_in_directory(c_path, True):  # c_path(사용자 정의 경로)의 파일 및 선택적으로 하위 디렉토리 반복
+                        yield Command.Delete(path) # 반복되는 파일 및 하위 디렉토리 삭제
                 else:
-                    raise RuntimeError(
+                    raise RuntimeError(    # 파일도 폴더도 아닐경우 런타임에러 발생
                         'custom folder has invalid type %s' % c_type)
 
         # menu
