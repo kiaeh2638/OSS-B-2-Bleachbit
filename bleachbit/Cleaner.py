@@ -538,12 +538,12 @@ class System(Cleaner):
             for dirname in dirnames: # 임시파일의 경로 반복
                 for path in children_in_directory(dirname, True): # 경로의 파일 및 하위 디렉토리 반복
                     is_open = FileUtilities.openfiles.is_open(path)  # path의 파일이 열려있는지 여부 
-                    ok = not is_open and os.path.isfile(path) and # path의 파일이 열려있지 않고 path가 존재하면 
-                        not os.path.islink(path) and \
-                        FileUtilities.ego_owner(path) and \
-                        not self.whitelisted(path)
+                    ok = not is_open and os.path.isfile(path) and # path의 파일이 열려있지 않고 path가 존재하며
+                        not os.path.islink(path) and \ # path가 link파일 혹은 폴더가 아니고
+                        FileUtilities.ego_owner(path) and \ # 현재 사용자가 파일을 소유하고 있고
+                        not self.whitelisted(path) # path가 화이트리스트인지 확인 
                     if ok:
-                        yield Command.Delete(path)
+                        yield Command.Delete(path) # path 삭제
 
         # temporary files
         if 'nt' == os.name and 'tmp' == option_id:
